@@ -164,17 +164,92 @@ class _SlotCard extends StatelessWidget {
     );
   }
   void _confirmBooking(BuildContext context, SlotsResponse slot) {
-    Get.defaultDialog(
-      title: 'Confirm Booking',
-      middleText: 'Book slot ${slot.startTime!.substring(0, 5)} - ${slot.endTime!.substring(0, 5)}?',
-      textConfirm: 'Book',
-      textCancel: 'Cancel',
-      confirmTextColor: Colors.white,
-      buttonColor: Colors.green,
-      onConfirm: () {
-        Get.back();
-        controller.bookSlot(slot.id ?? 0);
-      },
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.event_available,
+              color: Colors.green,
+            ),
+            const SizedBox(width: 8),
+            const Text('Confirm Booking'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'You are about to book this slot:',
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.green.shade200,
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.access_time,
+                    color: Colors.green,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '${slot.startTime!.substring(0, 5)} - ${slot.endTime!.substring(0, 5)}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            Text(
+              'Date: ${controller.formattedDate}',
+              style: const TextStyle(
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Get.back();
+              controller.bookSlot(slot.id ?? 0);
+            },
+            icon: const Icon(Icons.check),
+            label: const Text('Book Now'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -1,148 +1,393 @@
 # QuickSlot 🏸⚽
 
-> Mini app to book sports slots (badminton/turf) — concurrency-safe booking, Flutter + GetX frontend, Node.js + Supabase backend.
+A full-stack sports slot booking application built as part of a Flutter Developer Hackathon.
+
+The application allows users to browse sports venues, view available time slots for a selected date, book slots, manage bookings, and prevents double-booking through a concurrency-safe backend implementation.
 
 ---
 
-## Setup Steps
+# Tech Stack
 
-### Backend (Node.js)
+## Frontend
 
-```bash
-cd server
-npm install
-```
+* Flutter
+* GetX (State Management, Dependency Injection, Routing)
+* Dio (REST API Client)
 
-Create a `.env` file in `/server`:
+## Backend
 
-```dotenv
-DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@db.YOUR_REF.supabase.co:5432/postgres"
-PORT=3000
-```
+* Node.js
+* Express.js
 
-> **Note:** URL-encode special characters in password — `@` → `%40`, `#` → `%23`
+## Database
 
-```bash
-node index.js
-# Server running on port 3000
-```
-
----
-
-### Frontend (Flutter)
-
-```bash
-cd quickslot_app
-flutter pub get
-flutter run
-```
-
----
+* PostgreSQL (Supabase)
 
 ## Architecture
 
-### Backend
-- **Runtime:** Node.js + Express
-- **Database:** PostgreSQL via Supabase
-- **Auth:** Lightweight — hardcoded users, `X-User-Id` header
+* Clean feature-based Flutter structure
+* REST API communication
+* Transaction-based booking system
+* Repository/API Provider pattern
 
-### Database Schema
+---
 
-| Table | Key Columns |
-|-------|------------|
-| `venues` | id, name, sport, location |
-| `slots` | id, venue_id, date, start_time, end_time, status |
-| `bookings` | id, slot_id, user_id, created_at |
-| `users` | id, name |
+# Features Implemented
 
-### API Endpoints
+## Authentication (Lightweight)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/venues` | List all venues |
-| GET | `/venues/:id` | Venue detail |
-| GET | `/venues/:id/slots?date=YYYY-MM-DD` | Slots for a date |
-| POST | `/bookings` | Book a slot (concurrency-safe) |
-| GET | `/users/:id/bookings` | User's bookings |
-| DELETE | `/bookings/:id` | Cancel a booking |
+To focus on the core booking problem rather than authentication complexity, the application uses predefined users and an `X-User-Id` header.
 
-### Flutter (GetX)
+Users can:
+
+* Select a user profile
+* Continue into the application
+* Access personal bookings
+
+---
+
+## Venue Management
+
+Users can:
+
+* View all available sports venues
+* See sport type and location
+* Navigate to venue details
+
+Seeded venues:
+
+1. Green Turf Arena
+2. Smash Badminton Club
+3. City Sports Complex
+4. Pro Turf Ground
+5. Elite Badminton Academy
+
+---
+
+## Slot Management
+
+Users can:
+
+* Select a date
+* View available slots
+* View booked slots
+* Book available slots
+
+Features:
+
+* Date picker
+* Responsive slot grid
+* Available/Booked status indicators
+* Loading states
+* Empty states
+* Error states with retry
+
+Slots are generated hourly from:
+
+06:00 AM → 10:00 PM
+
+---
+
+## Booking Flow
+
+1. User selects a slot
+2. Booking confirmation dialog appears
+3. Request sent to backend
+4. Booking created successfully
+5. Slot list refreshes automatically
+
+If another user books the slot first:
+
+* Backend returns `409 Conflict`
+* Flutter displays a user-friendly message
+* Slot list refreshes automatically
+
+---
+
+## My Bookings
+
+Users can:
+
+* View all their bookings
+* Cancel bookings
+* See updated booking status instantly
+
+Features:
+
+* Loading state
+* Empty state
+* Error handling
+* Confirmation dialog before cancellation
+
+---
+
+# Backend API
+
+## GET /venues
+
+Returns all available venues.
+
+---
+
+## GET /venues/:id/slots?date=YYYY-MM-DD
+
+Returns slots for a selected venue and date.
+
+---
+
+## POST /bookings
+
+Creates a booking.
+
+Headers:
+
+```http
+X-User-Id: user1
 ```
+
+Body:
+
+```json
+{
+  "slot_id": 17
+}
+```
+
+Possible Responses:
+
+```http
+200 OK
+```
+
+```http
+409 Conflict
+```
+
+```http
+400 Bad Request
+```
+
+---
+
+## GET /users/:id/bookings
+
+Returns bookings for a user.
+
+---
+
+## DELETE /bookings/:id
+
+Cancels a booking.
+
+---
+
+# Database Design
+
+## venues
+
+| Column   | Type    |
+| -------- | ------- |
+| id       | integer |
+| name     | text    |
+| sport    | text    |
+| location | text    |
+
+## slots
+
+| Column     | Type    |
+| ---------- | ------- |
+| id         | integer |
+| venue_id   | integer |
+| date       | date    |
+| start_time | time    |
+| end_time   | time    |
+| status     | text    |
+
+## bookings
+
+| Column     | Type      |
+| ---------- | --------- |
+| id         | integer   |
+| slot_id    | integer   |
+| user_id    | text      |
+| created_at | timestamp |
+
+## users
+
+| Column | Type |
+| ------ | ---- |
+| id     | text |
+| name   | text |
+
+---
+
+# Concurrency-Safe Booking Strategy
+
+The most critical requirement of this assignment is preventing double booking.
+
+Implementation:
+
+1. Booking request starts a PostgreSQL transaction.
+2. Target slot row is locked using:
+
+```sql
+SELECT * FROM slots
+WHERE id = $1
+FOR UPDATE;
+```
+
+3. Backend checks current status.
+4. If available:
+
+    * Create booking
+    * Update slot status to booked
+    * Commit transaction
+5. If already booked:
+
+    * Rollback transaction
+    * Return 409 Conflict
+
+Result:
+
+When two users attempt to book the same slot simultaneously:
+
+* Exactly one succeeds.
+* The second receives a conflict response.
+* No duplicate bookings are created.
+
+---
+
+# Flutter Architecture
+
+```text
 lib/
+│
 ├── app/
-│   ├── bindings/
-│   └── routes/
+│   ├── routes/
+│   └── bindings/
+│
 ├── data/
 │   ├── models/
 │   └── providers/
+│
 ├── modules/
 │   ├── auth/
 │   ├── venues/
-│   ├── slots/
-│   └── bookings/
+│   ├── bookings/
+│   └── venue_details/
+│
 ├── widgets/
+│
 └── main.dart
 ```
 
-- **State Management:** GetX — chosen for minimal boilerplate, built-in routing, and reactive state in a time-constrained hackathon setting
-- **HTTP:** Dio
+### Why GetX?
+
+Chosen because:
+
+* Minimal boilerplate
+* Fast development
+* Reactive UI updates
+* Built-in routing
+* Dependency injection support
+
+Ideal for hackathon development where delivery speed matters.
 
 ---
 
-## Concurrency Approach
+# Error Handling
 
-Slot booking uses a PostgreSQL transaction with a row-level lock to prevent double booking:
+Frontend handles:
 
-```sql
-BEGIN;
-SELECT * FROM slots WHERE id = $1 FOR UPDATE;
--- Check if status = 'available'
--- If yes: INSERT booking + UPDATE slot status = 'booked'
-COMMIT;
-```
+* API failures
+* Empty responses
+* Network issues
+* Booking conflicts
+* Invalid operations
 
-If two users hit `POST /bookings` at the same instant, one gets `200 OK` and the other gets `409 Conflict` with a clear message.
+Backend handles:
 
----
-
-## What I Cut & Why
-
-| Cut | Reason |
-|-----|--------|
-| Full JWT auth | Hardcoded users + header is enough to demo the core flow; auth is not the interesting problem here |
-| Real-time websocket updates | Polling approach is simpler and reliable within 6 hours |
-| Payment flow | Out of scope for a slot-booking MVP |
+* Validation failures
+* Missing resources
+* Booking conflicts
+* Database transaction failures
 
 ---
 
-## What I'd Do With One More Day
+# What Was Deliberately Cut
 
-- Add JWT-based auth properly
-- WebSocket for live slot status updates across devices
-- Push notifications for booking confirmation
-- Dockerize the backend
-- Write unit tests for the booking transaction logic
+To ensure a reliable and complete solution within the time limit:
 
----
+* JWT Authentication
+* User Registration
+* Payment Integration
+* Push Notifications
+* WebSocket Updates
+* Admin Dashboard
 
-## AI Usage Note
-
-Used **Claude** for:
-- Boilerplate Express route structure
-- `.env` URL-encoding issue debug (`@` and `#` in password breaking PostgreSQL connection string)
-- GetX folder structure scaffolding commands
-
-**One thing it got wrong:** Claude initially suggested a direct Supabase connection string which failed due to IPv4 incompatibility on local network — had to manually switch to the Session Pooler URL from Supabase dashboard to fix the connection.
+These features are valuable but not essential to solving the core booking problem.
 
 ---
 
-## Seed Data
+# What I Would Build Next
 
-5 venues seeded:
-- Green Turf Arena — Football, Andheri West
-- Smash Badminton Club — Badminton, Powai
-- City Sports Complex — Badminton, Bandra
-- Pro Turf Ground — Football, Malad
-- Elite Badminton Academy — Badminton, Goregaon
+Given an additional day:
 
-Slots: hourly from **6 AM to 10 PM** for each venue.
+* JWT Authentication
+* WebSocket-based live slot updates
+* Offline caching
+* Docker deployment
+* Unit tests
+* Widget tests
+* Booking analytics dashboard
+* CI/CD pipeline
+
+---
+
+# AI Usage Note
+
+AI tools were used as productivity assistants for:
+
+* API scaffolding
+* Flutter UI boilerplate
+* GetX project structure
+* PostgreSQL connection troubleshooting
+* Error debugging
+
+All generated code was reviewed, modified, tested, and understood before integration.
+
+### Example of AI Mistake Found and Corrected
+
+An AI-generated PostgreSQL connection string initially failed because it used an incompatible connection endpoint. The issue was identified during testing and corrected by switching to the appropriate Supabase Session Pooler connection string.
+
+This reinforced the importance of validating AI-generated suggestions before production use.
+
+---
+
+# Demo Checklist
+
+✅ User Selection
+
+✅ Venue Listing
+
+✅ Venue Details
+
+✅ Date Selection
+
+✅ Slot Availability
+
+✅ Booking Flow
+
+✅ Conflict Handling
+
+✅ My Bookings
+
+✅ Cancel Booking
+
+✅ PostgreSQL Persistence
+
+✅ Concurrency-Safe Transactions
+
+✅ Flutter + GetX Architecture
+
+✅ Supabase Integration
