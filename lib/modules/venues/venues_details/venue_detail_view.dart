@@ -4,7 +4,9 @@ import 'package:quickslot_app/modules/venues/venues_details/venue_detail_control
 import '../../../data/models/slot_model.dart';
 
 class VenueDetailView extends GetView<VenueDetailController> {
-  const VenueDetailView({super.key});
+   VenueDetailView({super.key});
+
+  var detailsController = Get.put(VenueDetailController());
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +35,7 @@ class VenueDetailView extends GetView<VenueDetailController> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      controller.formattedDate,
+                      detailsController.formattedDate,
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                     ),
                     const Icon(Icons.calendar_today, color: Colors.green),
@@ -115,7 +117,7 @@ class _SlotCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isAvailable = slot.status == 'available';
+    final isAvailable = slot.isAvailable;
 
     return GestureDetector(
       onTap: isAvailable
@@ -123,10 +125,14 @@ class _SlotCard extends StatelessWidget {
           : null,
       child: Container(
         decoration: BoxDecoration(
-          color: isAvailable ? Colors.green.shade50 : Colors.grey.shade200,
+          color: isAvailable
+              ? Colors.green.shade50
+              : Colors.red.shade50,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isAvailable ? Colors.green : Colors.grey,
+            color: isAvailable
+                ? Colors.green
+                : Colors.red,
           ),
         ),
         child: Column(
@@ -136,14 +142,20 @@ class _SlotCard extends StatelessWidget {
               slot.startTime!.substring(0, 5),
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: isAvailable ? Colors.green : Colors.grey,
+                color: isAvailable
+                    ? Colors.green
+                    : Colors.red,
               ),
             ),
             Text(
-              isAvailable ? 'Available' : 'Booked',
+              isAvailable
+                  ? 'Available'
+                  : 'Booked',
               style: TextStyle(
                 fontSize: 10,
-                color: isAvailable ? Colors.green : Colors.grey,
+                color: isAvailable
+                    ? Colors.green
+                    : Colors.red,
               ),
             ),
           ],
@@ -151,7 +163,6 @@ class _SlotCard extends StatelessWidget {
       ),
     );
   }
-
   void _confirmBooking(BuildContext context, SlotsResponse slot) {
     Get.defaultDialog(
       title: 'Confirm Booking',

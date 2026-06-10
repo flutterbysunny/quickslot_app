@@ -9,7 +9,10 @@ class AuthController extends GetxController {
     {'id': 'user3', 'name': 'Arjun'},
   ];
 
-  final ApiProvider _api = ApiProvider();
+  final ApiProvider _api = Get.put(
+    ApiProvider(),
+    permanent: true,
+  );
 
   void selectUser(String userId, String userName) {
     _api.userId = userId;

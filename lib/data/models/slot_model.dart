@@ -1,12 +1,20 @@
 // To parse this JSON data, do
 //
-//     final slotsResponse = slotsResponseFromJson(jsonString);
+// final slots = slotsResponseFromJson(responseBody);
 
 import 'dart:convert';
 
-List<SlotsResponse> slotsResponseFromJson(String str) => List<SlotsResponse>.from(json.decode(str).map((x) => SlotsResponse.fromJson(x)));
+List<SlotsResponse> slotsResponseFromJson(String str) =>
+    List<SlotsResponse>.from(
+      json.decode(str).map((x) => SlotsResponse.fromJson(x)),
+    );
 
-String slotsResponseToJson(List<SlotsResponse> data) => json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
+String slotsResponseToJson(List<SlotsResponse> data) =>
+    json.encode(
+      List<dynamic>.from(
+        data.map((x) => x.toJson()),
+      ),
+    );
 
 class SlotsResponse {
   int? id;
@@ -25,14 +33,25 @@ class SlotsResponse {
     this.status,
   });
 
-  factory SlotsResponse.fromJson(Map<String, dynamic> json) => SlotsResponse(
-    id: json["id"],
-    venueId: json["venue_id"],
-    date: json["date"] == null ? null : DateTime.parse(json["date"]),
-    startTime: json["start_time"],
-    endTime: json["end_time"],
-    status: statusValues.map[json["status"]]!,
-  );
+  bool get isBooked => status == Status.BOOKED;
+
+  bool get isAvailable => status == Status.AVAILABLE;
+
+  factory SlotsResponse.fromJson(Map<String, dynamic> json) {
+    return SlotsResponse(
+      id: json["id"],
+      venueId: json["venue_id"],
+      date: json["date"] == null
+          ? null
+          : DateTime.parse(json["date"]),
+      startTime: json["start_time"],
+      endTime: json["end_time"],
+      status: statusValues.map[
+      json["status"]?.toString().toLowerCase()]
+          ??
+          Status.AVAILABLE,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     "id": id,
@@ -45,21 +64,25 @@ class SlotsResponse {
 }
 
 enum Status {
-  AVAILABLE
+  AVAILABLE,
+  BOOKED,
 }
 
-final statusValues = EnumValues({
-  "available": Status.AVAILABLE
+final statusValues = EnumValues<Status>({
+  "available": Status.AVAILABLE,
+  "booked": Status.BOOKED,
 });
 
 class EnumValues<T> {
-  Map<String, T> map;
-  late Map<T, String> reverseMap;
+  final Map<String, T> map;
+  late final Map<T, String> reverseMap;
 
   EnumValues(this.map);
 
   Map<T, String> get reverse {
-    reverseMap = map.map((k, v) => MapEntry(v, k));
+    reverseMap = map.map(
+          (k, v) => MapEntry(v, k),
+    );
     return reverseMap;
   }
 }

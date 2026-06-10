@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:get/get.dart' hide Response;
 
 class ApiProvider {
-  static const String baseUrl = 'http://10.0.2.2:3000';
+  static const String baseUrl = 'http://192.168.1.4:3000';
 
   final Dio _dio = Dio(BaseOptions(
     baseUrl: baseUrl,

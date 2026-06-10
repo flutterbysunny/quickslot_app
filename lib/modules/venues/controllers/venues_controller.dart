@@ -14,16 +14,25 @@ class VenuesController extends GetxController {
     super.onInit();
     fetchVenues();
   }
-
   Future<void> fetchVenues() async {
     try {
       isLoading(true);
       error('');
+
       final response = await _api.getVenues();
+
+      print("Response: ${response.data}");
+
       venues.value = (response.data as List)
           .map((e) => VenueResponse.fromJson(e))
           .toList();
-    } catch (e) {
+
+      print("Venues Count: ${venues.length}");
+
+    } catch (e, s) {
+      print("ERROR => $e");
+      print(s);
+
       error('Failed to load venues. Please try again.');
     } finally {
       isLoading(false);
