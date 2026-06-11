@@ -1,8 +1,7 @@
 import 'package:dio/dio.dart';
-import 'package:get/get.dart' hide Response;
 
 class ApiProvider {
-  static const String baseUrl = 'http://192.168.1.4:3000';
+  static const String baseUrl = 'https://quickslotbackend-production.up.railway.app';
 
   final Dio _dio = Dio(BaseOptions(
     baseUrl: baseUrl,
